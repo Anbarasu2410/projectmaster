@@ -1,9 +1,10 @@
+// routes/taskRoutes.ts
 import express from 'express';
 import {
   getAllTasks,
   getTaskById,
   createTaskInfo,
-  updateTask,
+  updateTaskInfo, // Changed from updateTask
   deleteTask,
   getTasksByProject,
   getTasksByStatus,
@@ -16,7 +17,7 @@ const router = express.Router();
 router.get('/', getAllTasks);
 router.get('/:id', getTaskById);
 router.post('/', createTaskInfo);
-router.put('/:id', updateTask);
+router.put('/:id', updateTaskInfo); 
 router.delete('/:id', deleteTask);
 router.get('/project/:projectId', getTasksByProject);
 router.get('/status/:status', getTasksByStatus);

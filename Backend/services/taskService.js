@@ -1,8 +1,21 @@
 import Task from "../models/Task.js";
-import { handleTransport } from "../handlers/transportHandler.js";
+import { handleTransport, handleTransportUpdate } from "../handlers/transportHandler";
+
 
 const taskHandlers = {
   TRANSPORT: handleTransport,
+  // Other task types will be handled by the core Task model only
+  WORK: null,
+  MATERIAL: null,
+  TOOL: null,
+  INSPECTION: null,
+  MAINTENANCE: null,
+  ADMIN: null,
+  TRAINING: null,
+  OTHER: null,
+};
+const updateHandlers = {
+  TRANSPORT: handleTransportUpdate, // You'll need to create this
   // Other task types will be handled by the core Task model only
   WORK: null,
   MATERIAL: null,
@@ -49,6 +62,56 @@ export async function createTask(taskData) {
     await session.abortTransaction();
     session.endSession();
     console.error('Error in task service:', error);
+    throw error;
+  }
+}
+// 🔹 Update Task
+export async function updateTask(taskId, updates) {
+  const session = await Task.startSession();
+  session.startTransaction();
+
+  try {
+    // Update core fields
+    const updatedTask = await Task.findOneAndUpdate(
+      { id: taskId }, 
+      {
+        $set: {
+          taskName: updates.taskName,
+          description: updates.description,
+          startDate: updates.startDate,
+          endDate: updates.endDate,
+          status: updates.status,
+          updatedAt: new Date(),
+          additionalData: updates.additionalData,
+        },
+      }, 
+      { new: true, session }
+    );
+
+    if (!updatedTask) throw new Error("Task not found");
+
+    // Delegate to specific handler based on task type
+    if (updateHandlers[updatedTask.taskType]) {
+      const result = await updateHandlers[updatedTask.taskType](taskId, updates.additionalData, session);
+
+      // For transport tasks, update the task with fleet task reference
+      if (updatedTask.taskType === "TRANSPORT" && result) {
+        await Task.updateOne(
+          { id: taskId }, 
+          { $set: { transportTaskId: result } }, 
+          { session }
+        );
+      }
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return updatedTask;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Error in task service update:', error);
     throw error;
   }
 }

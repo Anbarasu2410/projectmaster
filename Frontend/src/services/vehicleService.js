@@ -1,4 +1,4 @@
-// src/services/vehicleService.js
+// services/vehicleService.js
 import apiService from './apiService';
 
 const vehicleService = {
@@ -27,7 +27,9 @@ const vehicleService = {
   // Create new vehicle
   createVehicle: async (vehicleData) => {
     try {
-      const response = await apiService.createVehicle(vehicleData);
+      // Remove ID from data to let backend generate it
+      const { id, ...dataWithoutId } = vehicleData;
+      const response = await apiService.createVehicle(dataWithoutId);
       return response;
     } catch (error) {
       console.error('Error creating vehicle:', error);

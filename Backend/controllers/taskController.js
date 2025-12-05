@@ -4,10 +4,14 @@ import Project from '../models/Project.js';
 import Company from '../models/Company.js';
 import FleetTaskTool from '../models/FleetTaskTool.js';
 import FleetTaskMaterial from '../models/FleetTaskMaterial.js';
+//import { createTask } from "../services/taskService.js";
+//import {createTaskInfo,updateTaskInfo} from "../services/taskService.js";
+
 
 /**
  * Validates task input data
  */
+
 const validateTaskInput = (data) => {
   const { 
     companyId, projectId, taskName, taskType, startDate, endDate, status 
@@ -285,6 +289,34 @@ const createTaskInfo = async (req, res) => {
       success: false, 
       error: err.message,
       message: 'Failed to create task'
+    });
+  }
+};
+
+
+/**
+ * PUT /api/tasks/:id - Update task information
+ */
+const updateTaskInfo = async (req, res) => {
+  try {
+
+    console.log("📨 Raw request body for update:", req.body);
+    
+    // Use your service to update the task
+    const task = await updateTask(req.params.id, req.body);
+    
+    res.status(200).json({ 
+      success: true, 
+      data: task,
+      message: 'Task updated successfully'
+    });
+    
+  } catch (err) {
+    console.error('❌ Task update process failed:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: err.message,
+      message: 'Failed to update task'
     });
   }
 };
@@ -606,6 +638,7 @@ export {
   getTaskById,
   createTaskInfo,
   updateTask,
+  updateTaskInfo,
   deleteTask,
   getTasksByProject,
   getTasksByStatus,

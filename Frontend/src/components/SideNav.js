@@ -1,4 +1,3 @@
-// src/components/SideNav.jsx
 import React from 'react';
 import { Menu, Button } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -13,7 +12,8 @@ import {
   FileDoneOutlined,
   DoubleLeftOutlined,
   CarOutlined,
-  ScheduleOutlined
+  ScheduleOutlined,
+  TeamOutlined  // Add this import
 } from '@ant-design/icons';
 
 const SideNav = ({ collapsed, onClose }) => {
@@ -30,6 +30,11 @@ const SideNav = ({ collapsed, onClose }) => {
       key: '/companies',
       icon: <MessageOutlined />,
       label: 'Companies',
+    },
+    {
+      key: '/employees',  // Add this new menu item
+      icon: <TeamOutlined />,
+      label: 'Employees',
     },
     {
       key: '/fleet-tasks',
@@ -52,10 +57,10 @@ const SideNav = ({ collapsed, onClose }) => {
       label: 'Tasks',
     },
     {
-      key: '/todo',
-      icon: <CheckSquareOutlined />,
-      label: 'Todo List',
-    },
+  key: '/project-master',
+  icon: <ProjectOutlined />,
+  label: 'Project Master',
+},
     {
       key: '/notes',
       icon: <FileTextOutlined />,

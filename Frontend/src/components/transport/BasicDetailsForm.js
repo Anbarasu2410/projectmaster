@@ -52,7 +52,7 @@ const BasicDetailsForm = ({ onCompanyChange, onProjectChange, form, isEditing, e
         
         // Notify parent about company change
         if (onCompanyChange) {
-          onCompanyChange(company._id, company.id, company.name);
+          onCompanyChange(company.id, company.id, company.name);
         }
 
         // Set form values for dates and locations from edit data

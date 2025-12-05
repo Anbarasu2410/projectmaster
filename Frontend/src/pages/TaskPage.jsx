@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  Typography, 
-  Form, 
-  Button, 
-  Table, 
+import {
+  Card,
+  Typography,
+  Form,
+  Button,
+  Table,
   Tag,
   Space,
   Descriptions,
@@ -20,7 +20,7 @@ import {
   Divider,
   Badge
 } from 'antd';
-import { 
+import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
@@ -36,7 +36,7 @@ import {
 } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import BaseFields from "../components/TaskForm/BaseFields";
+import BaseFields from '../components/TaskForm/BaseFields';
 import dynamicSections from "../components/TaskForm/DynamicSections";
 
 const { Title, Text } = Typography;
@@ -131,7 +131,7 @@ const TaskPage = () => {
   const handleCompanyChange = (companyId) => {
     const company = companies.find(c => c.id === companyId);
     setSelectedCompany(company);
-    
+
     if (form) {
       form.setFieldsValue({
         projectId: undefined
@@ -145,19 +145,39 @@ const TaskPage = () => {
     try {
       setSubmitting(true);
       setFormLoading(true);
-      
+
       const formValues = form.getFieldsValue();
-      
+
+      // Validate dates before submission
+      let startDateValue = null;
+      let endDateValue = null;
+
+      if (values.startDate && dayjs.isDayjs(values.startDate)) {
+        startDateValue = values.startDate.format('YYYY-MM-DD');
+      }
+
+      if (values.endDate && dayjs.isDayjs(values.endDate)) {
+        endDateValue = values.endDate.format('YYYY-MM-DD');
+      }
+
       const taskData = {
         ...values,
         taskType,
-        startDate: values.startDate ? values.startDate.format('YYYY-MM-DD') : null,
-        endDate: values.endDate ? values.endDate.format('YYYY-MM-DD') : null,
+        startDate: startDateValue,
+        endDate: endDateValue,
         status: 'PLANNED',
         companyId: formValues.companyId,
         projectId: formValues.projectId,
         additionalData: values.additionalData || {}
       };
+
+      // Process additionalData dates if they exist
+      if (taskData.additionalData.pickupTime && dayjs.isDayjs(taskData.additionalData.pickupTime)) {
+        taskData.additionalData.pickupTime = taskData.additionalData.pickupTime.toISOString();
+      }
+      if (taskData.additionalData.dropTime && dayjs.isDayjs(taskData.additionalData.dropTime)) {
+        taskData.additionalData.dropTime = taskData.additionalData.dropTime.toISOString();
+      }
 
       // Validate required fields
       if (!taskData.companyId) {
@@ -186,8 +206,8 @@ const TaskPage = () => {
 
       // Update tasks list
       if (selectedTask) {
-        setTasks(prevTasks => 
-          prevTasks.map(task => 
+        setTasks(prevTasks =>
+          prevTasks.map(task =>
             task.id === selectedTask.id ? savedTask : task
           )
         );
@@ -199,7 +219,7 @@ const TaskPage = () => {
       setViewMode('details');
       form.resetFields();
       setSelectedCompany(null);
-      
+
     } catch (error) {
       console.error('❌ Error saving task:', error);
       const errorMessage = error.response?.data?.message || `Failed to ${selectedTask ? 'update' : 'create'} task`;
@@ -238,18 +258,33 @@ const TaskPage = () => {
   const handleEditTask = (task) => {
     setSelectedTask(task);
     setViewMode('create');
-    
+
+    // Ensure dates are properly converted to Day.js objects
+    const startDate = task.startDate ? dayjs(task.startDate) : null;
+    const endDate = task.endDate ? dayjs(task.endDate) : null;
+
+    // Handle additionalData dates if they exist
+    const additionalData = { ...(task.additionalData || {}) };
+
+    // Convert any date fields in additionalData to Day.js objects
+    if (additionalData.pickupTime) {
+      additionalData.pickupTime = dayjs(additionalData.pickupTime);
+    }
+    if (additionalData.dropTime) {
+      additionalData.dropTime = dayjs(additionalData.dropTime);
+    }
+
     form.setFieldsValue({
       companyId: task.companyId,
       projectId: task.projectId,
       taskName: task.taskName,
       taskType: task.taskType,
-      startDate: task.startDate ? dayjs(task.startDate) : null,
-      endDate: task.endDate ? dayjs(task.endDate) : null,
+      startDate: startDate,
+      endDate: endDate,
       notes: task.notes,
-      additionalData: task.additionalData || {}
+      additionalData: additionalData
     });
-    
+
     const company = companies.find(c => c.id === task.companyId);
     setSelectedCompany(company);
     setTaskType(task.taskType);
@@ -345,9 +380,9 @@ const TaskPage = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small" style={{ width: '100%', justifyContent: 'center' }}>
-          <Button 
-            type="link" 
-            icon={<EyeOutlined />} 
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
             size="small"
             onClick={() => {
               setSelectedTask(record);
@@ -357,8 +392,8 @@ const TaskPage = () => {
           >
             View
           </Button>
-          <Button 
-            type="link" 
+          <Button
+            type="link"
             icon={<EditOutlined />}
             size="small"
             onClick={() => handleEditTask(record)}
@@ -366,9 +401,9 @@ const TaskPage = () => {
           >
             Edit
           </Button>
-          <Button 
-            type="link" 
-            danger 
+          <Button
+            type="link"
+            danger
             icon={<DeleteOutlined />}
             size="small"
             onClick={() => handleDeleteTask(record.id)}
@@ -393,8 +428,8 @@ const TaskPage = () => {
           <Text type="secondary" className="text-sm sm:text-base">Manage and track all tasks efficiently</Text>
         </div>
         {viewMode === 'list' && (
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             icon={<PlusOutlined />}
             onClick={handleCreateTask}
             size="large"
@@ -405,9 +440,9 @@ const TaskPage = () => {
         )}
       </div>
 
-      {/* Create/Edit Task Form */}
+      {/* Create/Edit Task Form - PROPERLY ALIGNED */}
       {viewMode === 'create' && (
-        <Card 
+        <Card
           title={
             <div className="flex items-center">
               {isEditing ? <EditOutlined /> : <PlusOutlined />}
@@ -415,7 +450,7 @@ const TaskPage = () => {
                 {isEditing ? `Edit Task - ${selectedTask.taskName}` : 'Create New Task'}
               </span>
             </div>
-          } 
+          }
           className="mb-6 w-full shadow-lg"
           extra={
             <Button icon={<ArrowLeftOutlined />} onClick={handleFormCancel} className="hidden sm:inline-flex">
@@ -430,8 +465,9 @@ const TaskPage = () => {
               onFinish={handleSubmit}
               initialValues={{ taskType: 'WORK' }}
             >
+              {/* Company and Project Fields Side by Side */}
               <Row gutter={[16, 16]}>
-                <Col xs={24}>
+                <Col xs={24} sm={12}>
                   <Form.Item
                     name="companyId"
                     label="Company"
@@ -445,28 +481,13 @@ const TaskPage = () => {
                       optionFilterProp="children"
                       allowClear
                       size="large"
+                      style={{ width: '100%' }}
                     >
                       {companies.map(company => (
                         <Option key={company.id} value={company.id}>
                           {company.name} ({company.tenantCode})
                         </Option>
                       ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    name="taskType"
-                    label="Task Type"
-                    rules={[{ required: true, message: 'Please select task type' }]}
-                  >
-                    <Select onChange={setTaskType} size="large">
-                      <Option value="WORK">Work Task</Option>
-                      <Option value="MAINTENANCE">Maintenance</Option>
-                      <Option value="INSPECTION">Inspection</Option>
-                      <Option value="TRANSPORT">Transport</Option>
-                      <Option value="OTHER">Other</Option>
                     </Select>
                   </Form.Item>
                 </Col>
@@ -482,6 +503,7 @@ const TaskPage = () => {
                       loading={loading}
                       showSearch
                       size="large"
+                      style={{ width: '100%' }}
                     >
                       {projects.map(project => (
                         <Option key={project.id} value={project.id}>
@@ -491,65 +513,59 @@ const TaskPage = () => {
                     </Select>
                   </Form.Item>
                 </Col>
+              </Row>
 
-                <Col xs={24}>
-                  <Form.Item
-                    name="taskName"
-                    label="Task Name"
-                    rules={[{ required: true, message: 'Please enter task name' }]}
-                  >
-                    <Input placeholder="Enter task name" size="large" />
-                  </Form.Item>
-                </Col>
+              {/* BaseFields Component - Contains all basic task fields */}
+              <BaseFields
+                onTaskTypeChange={setTaskType}
+                isEditing={isEditing}
+                form={form}
+              />
 
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    name="startDate"
-                    label="Start Date"
-                    rules={[{ required: true, message: 'Please select start date' }]}
-                  >
-                    <DatePicker format="YYYY-MM-DD" style={{ width: '100%' }} size="large" />
-                  </Form.Item>
-                </Col>
-
-                <Col xs={24} sm={12}>
-                  <Form.Item
-                    name="endDate"
-                    label="End Date"
-                    rules={[{ required: true, message: 'Please select end date' }]}
-                  >
-                    <DatePicker format="YYYY-MM-DD" style={{ width: '100%' }} size="large" />
-                  </Form.Item>
-                </Col>
-
+              {/* Notes Field */}
+              <Row gutter={[16, 16]}>
                 <Col xs={24}>
                   <Form.Item name="notes" label="Notes">
-                    <TextArea 
-                      rows={3} 
-                      placeholder="Enter any additional notes or instructions" 
+                    <TextArea
+                      rows={3}
+                      placeholder="Enter any additional notes or instructions"
                       size="large"
                     />
                   </Form.Item>
                 </Col>
               </Row>
 
+              {/* Dynamic Section */}
               <div className="mt-6 border-t pt-4">
                 {taskType === 'TRANSPORT' ? (
-                  <DynamicSection form={form} selectedCompany={selectedCompany} />
+                  <DynamicSection
+                    form={form}
+                    selectedCompany={selectedCompany}
+                    isEditing={isEditing}  // Add this line
+                  />
                 ) : (
-                  <DynamicSection form={form} />
+                  <DynamicSection
+                    form={form}
+                    isEditing={isEditing}  // Add this line
+                  />
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
-                <Button onClick={handleFormCancel} className="w-full sm:w-auto order-2 sm:order-1">
+              {/* Form Actions */}
+              <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6 pt-4 border-t">
+                <Button
+                  onClick={handleFormCancel}
+                  className="w-full sm:w-auto"
+                  size="large"
+                >
                   Cancel
                 </Button>
-                <Button 
-                  type="primary" 
-                  htmlType="submit" 
+                <Button
+                  type="primary"
+                  htmlType="submit"
                   loading={formLoading}
-                  className="w-full sm:w-auto order-1 sm:order-2"
+                  className="w-full sm:w-auto"
+                  size="large"
                 >
                   {isEditing ? 'Update Task' : 'Create Task'}
                 </Button>
@@ -572,15 +588,15 @@ const TaskPage = () => {
               </Button>
             </div>
             <div className="overflow-x-auto">
-              <Table 
-                columns={columns} 
+              <Table
+                columns={columns}
                 dataSource={tasks}
                 rowKey="id"
-                pagination={{ 
+                pagination={{
                   pageSize: 10,
                   showSizeChanger: true,
                   showQuickJumper: true,
-                  showTotal: (total, range) => 
+                  showTotal: (total, range) =>
                     `${range[0]}-${range[1]} of ${total} items`,
                   responsive: true
                 }}
@@ -594,7 +610,7 @@ const TaskPage = () => {
 
       {/* Task Details View - Responsive */}
       {viewMode === 'details' && selectedTask && (
-        <Card 
+        <Card
           className="w-full shadow-lg"
           title={
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -602,8 +618,8 @@ const TaskPage = () => {
                 <EyeOutlined className="text-blue-500 mr-2" />
                 <span className="text-base sm:text-lg">Task Details</span>
               </div>
-              <Button 
-                icon={<ArrowLeftOutlined />} 
+              <Button
+                icon={<ArrowLeftOutlined />}
                 onClick={() => setViewMode('list')}
                 className="w-full sm:w-auto"
               >
@@ -616,17 +632,17 @@ const TaskPage = () => {
           <div className="mb-6">
             <Title level={4} className="mb-4 text-lg">Basic Information</Title>
             <div className="overflow-x-auto">
-              <Descriptions 
-                bordered 
+              <Descriptions
+                bordered
                 column={{ xs: 1, sm: 1, md: 2 }}
                 size="middle"
-                labelStyle={{ 
-                  fontWeight: '600', 
+                labelStyle={{
+                  fontWeight: '600',
                   width: '120px',
                   backgroundColor: '#fafafa'
                 }}
-                contentStyle={{ 
-                  backgroundColor: '#fff' 
+                contentStyle={{
+                  backgroundColor: '#fff'
                 }}
               >
                 <Descriptions.Item label="Task ID">
@@ -668,17 +684,17 @@ const TaskPage = () => {
                   Transport Details
                 </Title>
                 <div className="overflow-x-auto">
-                  <Descriptions 
-                    bordered 
+                  <Descriptions
+                    bordered
                     column={{ xs: 1, sm: 1, md: 2 }}
                     size="middle"
-                    labelStyle={{ 
-                      fontWeight: '600', 
+                    labelStyle={{
+                      fontWeight: '600',
                       width: '120px',
                       backgroundColor: '#fafafa'
                     }}
-                    contentStyle={{ 
-                      backgroundColor: '#fff' 
+                    contentStyle={{
+                      backgroundColor: '#fff'
                     }}
                   >
                     <Descriptions.Item label="Transport Type" span={2}>
@@ -715,61 +731,61 @@ const TaskPage = () => {
               </div>
 
               {/* Materials for Material Transport */}
-              {selectedTask.additionalData.transportType === 'MATERIAL_TRANSPORT' && 
-               selectedTask.additionalData.materialQuantities && 
-               selectedTask.additionalData.materialQuantities.length > 0 && (
-                <div className="mb-6">
-                  <Title level={4} className="mb-4 text-lg">
-                    <BoxPlotOutlined className="mr-2" />
-                    Materials to Transport
-                  </Title>
-                  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-                    {selectedTask.additionalData.materialQuantities.map((item, index) => (
-                      <div key={index} className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 border-b last:border-b-0 gap-2">
-                        <div className="flex items-center">
-                          <Text strong className="text-base">Material ID: {item.materialId}</Text>
+              {selectedTask.additionalData.transportType === 'MATERIAL_TRANSPORT' &&
+                selectedTask.additionalData.materialQuantities &&
+                selectedTask.additionalData.materialQuantities.length > 0 && (
+                  <div className="mb-6">
+                    <Title level={4} className="mb-4 text-lg">
+                      <BoxPlotOutlined className="mr-2" />
+                      Materials to Transport
+                    </Title>
+                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                      {selectedTask.additionalData.materialQuantities.map((item, index) => (
+                        <div key={index} className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 border-b last:border-b-0 gap-2">
+                          <div className="flex items-center">
+                            <Text strong className="text-base">Material ID: {item.materialId}</Text>
+                          </div>
+                          <div className="flex items-center">
+                            <Text className="mr-2 text-base">Quantity: </Text>
+                            <Tag color="green" className="text-base py-1">{item.quantity}</Tag>
+                          </div>
                         </div>
-                        <div className="flex items-center">
-                          <Text className="mr-2 text-base">Quantity: </Text>
-                          <Tag color="green" className="text-base py-1">{item.quantity}</Tag>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Tools for Tool Transport */}
-              {selectedTask.additionalData.transportType === 'TOOL_TRANSPORT' && 
-               selectedTask.additionalData.toolQuantities && 
-               selectedTask.additionalData.toolQuantities.length > 0 && (
-                <div className="mb-6">
-                  <Title level={4} className="mb-4 text-lg">
-                    <ToolOutlined className="mr-2" />
-                    Tools to Transport
-                  </Title>
-                  <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-                    {selectedTask.additionalData.toolQuantities.map((item, index) => (
-                      <div key={index} className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 border-b last:border-b-0 gap-2">
-                        <div className="flex items-center">
-                          <Text strong className="text-base">Tool ID: {item.toolId}</Text>
+              {selectedTask.additionalData.transportType === 'TOOL_TRANSPORT' &&
+                selectedTask.additionalData.toolQuantities &&
+                selectedTask.additionalData.toolQuantities.length > 0 && (
+                  <div className="mb-6">
+                    <Title level={4} className="mb-4 text-lg">
+                      <ToolOutlined className="mr-2" />
+                      Tools to Transport
+                    </Title>
+                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                      {selectedTask.additionalData.toolQuantities.map((item, index) => (
+                        <div key={index} className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 border-b last:border-b-0 gap-2">
+                          <div className="flex items-center">
+                            <Text strong className="text-base">Tool ID: {item.toolId}</Text>
+                          </div>
+                          <div className="flex items-center">
+                            <Text className="mr-2 text-base">Quantity: </Text>
+                            <Tag color="blue" className="text-base py-1">{item.quantity}</Tag>
+                          </div>
                         </div>
-                        <div className="flex items-center">
-                          <Text className="mr-2 text-base">Quantity: </Text>
-                          <Tag color="blue" className="text-base py-1">{item.quantity}</Tag>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </>
           )}
 
-          {/* Action Buttons - Improved Alignment */}
+          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8 pt-6 border-t">
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               icon={<PlusOutlined />}
               onClick={handleCreateTask}
               className="w-full sm:w-auto"
@@ -778,7 +794,7 @@ const TaskPage = () => {
               Create New Task
             </Button>
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <Button 
+              <Button
                 icon={<EditOutlined />}
                 onClick={() => handleEditTask(selectedTask)}
                 className="w-full sm:w-auto"
@@ -786,8 +802,8 @@ const TaskPage = () => {
               >
                 Edit Task
               </Button>
-              <Button 
-                danger 
+              <Button
+                danger
                 icon={<DeleteOutlined />}
                 onClick={() => handleDeleteTask(selectedTask.id)}
                 className="w-full sm:w-auto"

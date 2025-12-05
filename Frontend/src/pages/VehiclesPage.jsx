@@ -225,26 +225,31 @@ const VehiclesPage = () => {
         lastServiceDate: values.lastServiceDate ? values.lastServiceDate.toISOString() : null,
       };
 
+      console.log('📤 Submitting vehicle data:', vehicleData);
+
       if (editingVehicle) {
         // Update existing vehicle
         const vehicleId = editingVehicle.id || editingVehicle._id;
-        await vehicleService.updateVehicle(vehicleId, vehicleData);
+        const response = await vehicleService.updateVehicle(vehicleId, vehicleData);
         message.success('Vehicle updated successfully');
         
         // Update local state
         setVehicles(prev => prev.map(v => 
           (v.id === vehicleId || v._id === vehicleId) 
-            ? { ...v, ...vehicleData }
+            ? { ...v, ...vehicleData, id: vehicleId }
             : v
         ));
       } else {
-        // Create new vehicle
+        // Create new vehicle - let backend generate ID
         const response = await vehicleService.createVehicle(vehicleData);
         message.success('Vehicle created successfully');
         
         // Add to local state
         if (response.data) {
           setVehicles(prev => [...prev, response.data]);
+        } else {
+          // Reload data to get the auto-generated ID
+          await loadData();
         }
       }
 
@@ -252,7 +257,7 @@ const VehiclesPage = () => {
       form.resetFields();
     } catch (error) {
       console.error('Error saving vehicle:', error);
-      message.error(`Failed to ${editingVehicle ? 'update' : 'create'} vehicle`);
+      message.error(`Failed to ${editingVehicle ? 'update' : 'create'} vehicle: ${error.message}`);
     }
   };
 
@@ -264,13 +269,13 @@ const VehiclesPage = () => {
   const getStatusTag = (status) => {
     const colorMap = {
       'AVAILABLE': 'green',
-      'IN_USE': 'blue',
+      'IN_SERVICE': 'blue',
       'MAINTENANCE': 'orange',
       'OUT_OF_SERVICE': 'red'
     };
     const textMap = {
       'AVAILABLE': 'Available',
-      'IN_USE': 'In Use',
+      'IN_SERVICE': 'In Service',
       'MAINTENANCE': 'Maintenance',
       'OUT_OF_SERVICE': 'Out of Service'
     };
@@ -284,6 +289,13 @@ const VehiclesPage = () => {
 
   // Table columns
   const columns = [
+    {
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id',
+      sorter: (a, b) => (a.id || 0) - (b.id || 0),
+      width: 80,
+    },
     {
       title: 'Vehicle Code',
       dataIndex: 'vehicleCode',
@@ -420,7 +432,7 @@ const VehiclesPage = () => {
                 <Form.Item label="Status" name="status" className="mb-2">
                   <Select placeholder="All status" allowClear size="small">
                     <Option value="AVAILABLE">Available</Option>
-                    <Option value="IN_USE">In Use</Option>
+                    <Option value="IN_SERVICE">In Service</Option>
                     <Option value="MAINTENANCE">Maintenance</Option>
                     <Option value="OUT_OF_SERVICE">Out of Service</Option>
                   </Select>
@@ -588,7 +600,7 @@ const VehiclesPage = () => {
               >
                 <Select placeholder="Select status" size="large">
                   <Option value="AVAILABLE">Available</Option>
-                  <Option value="IN_USE">In Use</Option>
+                  <Option value="IN_SERVICE">In Service</Option>
                   <Option value="MAINTENANCE">Maintenance</Option>
                   <Option value="OUT_OF_SERVICE">Out of Service</Option>
                 </Select>
@@ -673,29 +685,35 @@ const VehiclesPage = () => {
           <div className="space-y-4">
             <Row gutter={16}>
               <Col span={12}>
+                <strong>Vehicle ID:</strong>
+                <div>{viewingVehicle.id}</div>
+              </Col>
+              <Col span={12}>
                 <strong>Vehicle Code:</strong>
                 <div>{viewingVehicle.vehicleCode}</div>
               </Col>
+            </Row>
+            <Row gutter={16}>
               <Col span={12}>
                 <strong>Registration No:</strong>
                 <div>{viewingVehicle.registrationNo}</div>
               </Col>
-            </Row>
-            <Row gutter={16}>
               <Col span={12}>
                 <strong>Vehicle Type:</strong>
                 <div>{viewingVehicle.vehicleType}</div>
               </Col>
+            </Row>
+            <Row gutter={16}>
               <Col span={12}>
                 <strong>Capacity:</strong>
                 <div>{viewingVehicle.capacity} seats</div>
               </Col>
-            </Row>
-            <Row gutter={16}>
               <Col span={12}>
                 <strong>Company:</strong>
                 <div>{getCompanyName(viewingVehicle.companyId)}</div>
               </Col>
+            </Row>
+            <Row gutter={16}>
               <Col span={12}>
                 <strong>Status:</strong>
                 <div>{getStatusTag(viewingVehicle.status)}</div>

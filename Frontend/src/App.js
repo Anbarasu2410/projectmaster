@@ -9,6 +9,10 @@ import VehiclesPage from './pages/VehiclesPage';
 import TaskPage from './pages/TaskPage'; // Import the TaskPage
 import TopHeader from './components/TopHeader';
 import SideNav from './components/SideNav';
+import EmployeesPage from './pages/EmployeesPage';
+import EmployeeList from './pages/EmployeeList';
+
+ import ProjectMaster from "./pages/ProjectMaster/ProjectMaster.jsx";
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
@@ -59,6 +63,28 @@ function App() {
             <CompaniesPage />
           </AppLayout>
         } />
+               
+
+{/* Employee routes */}
+<Route path="/employees" element={
+  <AppLayout>
+    <EmployeeList />
+  </AppLayout>
+} />
+
+<Route path="/employees/create" element={
+  <AppLayout>
+    <EmployeesPage />
+  </AppLayout>
+} />
+
+<Route path="/employees/:id" element={
+  <AppLayout>
+    <EmployeesPage />
+  </AppLayout>
+} />
+
+
         
         <Route path="/fleet-tasks" element={
           <AppLayout>
@@ -84,6 +110,15 @@ function App() {
             <TaskPage />
           </AppLayout>
         } />
+        
+        <Route
+  path="/project-master"
+  element={
+    <AppLayout>
+      <ProjectMaster />
+    </AppLayout>
+  }
+/>
         
         {/* Default route - redirect to home instead of login */}
         <Route path="*" element={<Navigate to="/" replace />} />
